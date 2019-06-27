@@ -19,7 +19,7 @@ public:
 	void Update();
 	void Draw();
 
-
+	float GetPositionX(void) { return m_Position.x; };
 };
 
 #endif // !PLAYER_H_

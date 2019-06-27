@@ -15,5 +15,5 @@ public:
 	static void Draw();
 
 	static CScene* GetScene();
-
+	static void Gui_Show();
 };
