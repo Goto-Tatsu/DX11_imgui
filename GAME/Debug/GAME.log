@@ -1,2 +1,5 @@
-﻿  manager.cpp
+﻿  model.cpp
+  player.cpp
+  texture.cpp
+  コードを生成中...
   GAME.vcxproj -> C:\Users\閑人狂乱個人雑記\Desktop\HAL\4-3\GM31\DX11_imgui\GAME\Debug\GAME.exe
