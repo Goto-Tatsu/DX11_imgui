@@ -19,8 +19,10 @@ public:
 	void Update();
 	void Draw();
 
+	XMFLOAT3 GetPosition(void) { return m_Position; };
 	float GetPositionX(void) { return m_Position.x; };
-
+	float GetPositionY(void) { return m_Position.y; };
+	float GetPositionZ(void) { return m_Position.z; };
 };
 
 #endif // !PLAYER_H_

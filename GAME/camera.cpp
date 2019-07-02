@@ -6,10 +6,9 @@
 #include "camera.h"
 
 
-
-
 void CCamera::Init()
 {
+	m_fCameraAngle = 0.0f;
 
 	m_Position = XMFLOAT3(0.0f, 7.0f, -15.0f);
 	m_Rotation = XMFLOAT3(0.5f, 0.0f, 0.0f);
@@ -20,6 +19,7 @@ void CCamera::Init()
 	m_Viewport.right = SCREEN_WIDTH;
 	m_Viewport.bottom = SCREEN_HEIGHT;
 
+	m_Target = XMFLOAT3(0.0f, 1.0f, -5.0f);
 }
 
 
@@ -32,19 +32,32 @@ void CCamera::Uninit()
 
 void CCamera::Update()
 {
+	// 移動
 	if (CInput::GetKeyPress('A')) {		// 左
 		m_Position.x -= 0.5f;
 	}
-	if (CInput::GetKeyPress('D')) {		// 右
+	else if (CInput::GetKeyPress('D')) {		// 右
 		m_Position.x += 0.5f;
 	}
-	if (CInput::GetKeyPress('W')) {		// 前方
+	else if (CInput::GetKeyPress('W')) {		// 前方
 		m_Position.z += 0.5f;
 	}
-	if (CInput::GetKeyPress('S')) {		// 後方
+	else if (CInput::GetKeyPress('S')) {		// 後方
 		m_Position.z -= 0.5f;
 	}
 
+	// 旋回
+	if (CInput::GetKeyPress(VK_RIGHT)) {
+		m_Rotation.y += 0.01f;
+		//m_fCameraAngle += 0.01f;
+	}
+	else if (CInput::GetKeyPress(VK_LEFT)) {
+		m_Rotation.y -= 0.01f;
+		//m_fCameraAngle -= 0.01f;
+	}
+	
+
+	
 }
 
 
@@ -52,11 +65,11 @@ void CCamera::Update()
 void CCamera::Draw()
 {
 
-	XMMATRIX	m_ViewMatrix;
-	XMMATRIX	m_InvViewMatrix;
-	XMMATRIX	m_ProjectionMatrix;
+	XMMATRIX	m_ViewMatrix;			// ビュー座標行列
+	XMMATRIX	m_InvViewMatrix;		// ビュー逆行列変換用格納行列
+	XMMATRIX	m_ProjectionMatrix;		// プロジェクション行列
 
-
+	
 
 	// ビューポート設定
 	D3D11_VIEWPORT dxViewport;
@@ -71,14 +84,14 @@ void CCamera::Draw()
 
 
 
-	// ビューマトリクス設定
-	m_InvViewMatrix = XMMatrixRotationRollPitchYaw(m_Rotation.x, m_Rotation.y, m_Rotation.z);
-	m_InvViewMatrix *= XMMatrixTranslation(m_Position.x, m_Position.y, m_Position.z);
+	// ビューマトリクス設定(移動はここで入れてる)
+	m_InvViewMatrix = XMMatrixRotationRollPitchYaw(m_Rotation.x, m_Rotation.y, m_Rotation.z);	// 旋回
+	m_InvViewMatrix *= XMMatrixTranslation(m_Position.x, m_Position.y, m_Position.z);			// 移動	// ヨー角に掛け算してる
 
 	XMVECTOR det;
-	m_ViewMatrix = XMMatrixInverse(&det, m_InvViewMatrix);
+		m_ViewMatrix = XMMatrixInverse(&det, m_InvViewMatrix);	// 逆行列
 
-	CRenderer::SetViewMatrix(&m_ViewMatrix);
+	CRenderer::SetViewMatrix(&m_ViewMatrix);	// ビュー行列を渡してあげる
 
 
 
