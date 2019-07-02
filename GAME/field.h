@@ -16,7 +16,9 @@ public:
 	void ScaleMinus();
 
 private:
-	ID3D11Buffer* m_VertexBuffer = NULL;
+	ID3D11Buffer* m_pVertexBuffer = NULL;
+	ID3D11Buffer* m_pIndexBuffer = NULL;
+
 	CTexture* m_Texture = NULL;
 };
 

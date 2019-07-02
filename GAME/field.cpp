@@ -50,7 +50,7 @@ void CField::Init()
 	D3D11_SUBRESOURCE_DATA sd;
 	ZeroMemory(&sd, sizeof(sd));
 	sd.pSysMem = vertex;
-	CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_VertexBuffer);
+	CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_pVertexBuffer);
 	/* 頂点ばっふぁ～生成おわり */
 
 	// テクスチャよみこみ
@@ -61,6 +61,12 @@ void CField::Init()
 
 void CField::Init(const char * TexName)
 {
+	// インデックスの
+	WORD IndexList[]{
+		0, 1, 2,
+		2, 3, 1,
+	};
+
 	g_Rotation = 0.0f;
 	g_Scale = 1.0;
 
@@ -87,17 +93,39 @@ void CField::Init(const char * TexName)
 	vertex[3].TexCoord = XMFLOAT2(1.0f, 1.0f);
 
 	// ばっふぁにもってく
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory(&bd, sizeof(bd));
-	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(VERTEX_3D) * 4;
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// 頂点バッファ
-	bd.CPUAccessFlags = 0;
+	// 頂点バッファの生成
+	{
+		D3D11_BUFFER_DESC bd;
+		ZeroMemory(&bd, sizeof(bd));
+		bd.Usage = D3D11_USAGE_DEFAULT;
+		bd.ByteWidth = sizeof(VERTEX_3D) * 4;
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// 頂点バッファ
+		bd.CPUAccessFlags = 0;
 
-	D3D11_SUBRESOURCE_DATA sd;
-	ZeroMemory(&sd, sizeof(sd));
-	sd.pSysMem = vertex;
-	CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_VertexBuffer);
+		D3D11_SUBRESOURCE_DATA sd;
+		ZeroMemory(&sd, sizeof(sd));
+		sd.pSysMem = vertex;
+		CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_pVertexBuffer);
+	}
+	
+	// Indexバッファの生成
+	{
+		D3D11_BUFFER_DESC bd;
+		ZeroMemory(&bd, sizeof(bd));
+		bd.Usage = D3D11_USAGE_DEFAULT;
+		bd.ByteWidth = sizeof(WORD) * 6;
+		bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		bd.CPUAccessFlags = 0;
+
+		D3D11_SUBRESOURCE_DATA sd;
+		ZeroMemory(&sd, sizeof(sd));
+		sd.pSysMem = IndexList;
+
+		if (FAILED(CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_pIndexBuffer)))
+			return;
+	}
+
+
 	/* 頂点ばっふぁ～生成おわり */
 
 	// テクスチャよみこみ
@@ -141,7 +169,7 @@ void CField::Init(const float PosX, const float PosY, const float PosZ, const fl
 	D3D11_SUBRESOURCE_DATA sd;
 	ZeroMemory(&sd, sizeof(sd));
 	sd.pSysMem = vertex;
-	CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_VertexBuffer);
+	CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_pVertexBuffer);
 	/* 頂点ばっふぁ～生成おわり */
 
 	// テクスチャよみこみ
@@ -152,7 +180,7 @@ void CField::Init(const float PosX, const float PosY, const float PosZ, const fl
 
 void CField::Uninit()
 {
-	m_VertexBuffer->Release();	// ちょうてんばっふぁばいばい
+	m_pVertexBuffer->Release();	// ちょうてんばっふぁばいばい
 	m_Texture->Unload();		// よんだてくすちゃばいばい
 	delete m_Texture;			// いれものばいばい
 }
@@ -176,7 +204,8 @@ void CField::Draw()
 {
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
-	CRenderer::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);		// 頂点バッファ設定
+	CRenderer::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);		// 頂点バッファ設定
+	CRenderer::GetDeviceContext()->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 	CRenderer::SetTexture(m_Texture);
 
 	// SetWorldViewProjection2Dの代わり
@@ -187,7 +216,7 @@ void CField::Draw()
 	CRenderer::SetWorldMatrix(&world);							
 
 	CRenderer::GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);	// トポロジー(どうやって配置するか)設定
-	CRenderer::GetDeviceContext()->Draw(4, 0);
+	CRenderer::GetDeviceContext()->DrawIndexed(6, 0, 0);
 }
 
 
@@ -195,7 +224,7 @@ void CField::Draw(const float ScaleX, const float ScaleY, const float ScaleZ, co
 {
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
-	CRenderer::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);		// 頂点バッファ設定
+	CRenderer::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);		// 頂点バッファ設定
 	CRenderer::SetTexture(m_Texture);
 
 	// SetWorldViewProjection2Dの代わり

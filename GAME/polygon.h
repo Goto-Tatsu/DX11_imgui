@@ -2,6 +2,7 @@
 #define POLYGON_H_
 
 
+
 class CPolygon : public CGameObject	// CGameObjectÇ©ÇÁåpè≥
 {
 public:
@@ -12,7 +13,6 @@ public:
 	void Uninit();
 	void Update();
 	void Draw();
-	void IndexDraw();
 
 private:
 	ID3D11Buffer* m_pVertexBuffer = NULL;	
