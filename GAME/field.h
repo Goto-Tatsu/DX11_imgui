@@ -1,6 +1,9 @@
 #ifndef FIELD_H_
 #define FIELD_H_
 
+#define FIELD_X		(20)	// フィールドの横メッシュ数
+#define FIELD_Z		(10)	// フィールドの縦メッシュ数
+#define FIELD_SIZE	(1)
 
 class CField:public CGameObject	// CGameObjectから継承
 {
@@ -15,12 +18,19 @@ public:
 	void ScalePlus();
 	void ScaleMinus();
 
-private:
+	int m_xCnt = 0;
+	int m_zCnt = 0;
+	int vertexCnt;
+	int returnCnt;
+
 	ID3D11Buffer* m_pVertexBuffer = NULL;
 	ID3D11Buffer* m_pIndexBuffer = NULL;
 
+private:
 	CTexture* m_Texture = NULL;
 };
 
+void Vertex_Index_Config();
+void Vertex_Index_Config(float size, int field_x, int field_z);
 
 #endif // !FIELD_H_

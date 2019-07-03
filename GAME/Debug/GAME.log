@@ -1,2 +1,15 @@
-﻿  field.cpp
+﻿  bullet.cpp
+  enemy.cpp
+  field.cpp
+C:\Users\閑人狂乱個人雑記\Desktop\HAL\4-3\GM31\DX11_imgui\GAME\enemy.cpp(33,12): warning C4244:  '引数': 'time_t' から 'unsigned int' への変換です。データが失われる可能性があります。
+C:\Users\閑人狂乱個人雑記\Desktop\HAL\4-3\GM31\DX11_imgui\GAME\field.cpp(81,135): warning C4244:  '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\閑人狂乱個人雑記\Desktop\HAL\4-3\GM31\DX11_imgui\GAME\field.cpp(81,83): warning C4244:  '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\閑人狂乱個人雑記\Desktop\HAL\4-3\GM31\DX11_imgui\GAME\field.cpp(271,135): warning C4244:  '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\閑人狂乱個人雑記\Desktop\HAL\4-3\GM31\DX11_imgui\GAME\field.cpp(271,83): warning C4244:  '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\閑人狂乱個人雑記\Desktop\HAL\4-3\GM31\DX11_imgui\GAME\field.cpp(363,135): warning C4244:  '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  manager.cpp
+  player.cpp
+  コードを生成中...
+C:\Users\閑人狂乱個人雑記\Desktop\HAL\4-3\GM31\DX11_imgui\GAME\field.cpp(363,83): warning C4244:  '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\閑人狂乱個人雑記\Desktop\HAL\4-3\GM31\DX11_imgui\GAME\field.cpp(363,83): warning C4244: C:\Users\閑人狂乱個人雑記\Desktop\HAL\4-3\GM31\DX11_imgui\GAME\scene.h(62) : warning C4715: 'CScene::GetGameObject<CEnemy>': 値を返さないコントロール パスがあります。
   GAME.vcxproj -> C:\Users\閑人狂乱個人雑記\Desktop\HAL\4-3\GM31\DX11_imgui\GAME\Debug\GAME.exe
