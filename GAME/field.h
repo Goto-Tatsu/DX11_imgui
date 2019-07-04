@@ -1,9 +1,10 @@
 #ifndef FIELD_H_
 #define FIELD_H_
 
-#define FIELD_X		(20)	// フィールドの横メッシュ数
-#define FIELD_Z		(10)	// フィールドの縦メッシュ数
+#define FIELD_X		(3)	// フィールドの横メッシュ数
+#define FIELD_Z		(3)	// フィールドの縦メッシュ数
 #define FIELD_SIZE	(1)
+
 
 class CField:public CGameObject	// CGameObjectから継承
 {
@@ -18,19 +19,26 @@ public:
 	void ScalePlus();
 	void ScaleMinus();
 
+	void MuraseField();
+	void MuraseFieldDraw();
+
 	int m_xCnt = 0;
 	int m_zCnt = 0;
 	int vertexCnt;
 	int returnCnt;
 
+	VERTEX_3D m_Vertex[25];	// MuraseField用の配列要素
+
 	ID3D11Buffer* m_pVertexBuffer = NULL;
 	ID3D11Buffer* m_pIndexBuffer = NULL;
 
 private:
+
 	CTexture* m_Texture = NULL;
 };
 
 void Vertex_Index_Config();
 void Vertex_Index_Config(float size, int field_x, int field_z);
+
 
 #endif // !FIELD_H_

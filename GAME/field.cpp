@@ -15,6 +15,21 @@
 float g_Rotation;
 float g_Scale;
 
+int g_gridsize_x;
+int g_gridsize_z;
+int g_gridnumber_x;
+int g_gridnumber_z;
+static int g_indexnumber;
+static int g_vertexnumber;
+
+static float g_FieldHeight[5][5] =
+{
+ {1.0f,2.0f,0.0f,-1.0f,0.0f},
+ {0.5f,1.0f,0.0f,-0.5f,0.0f},
+ {2.0f,0.5f,0.0f,-2.0f,0.0f},
+ {0.5f,2.0f,0.0f,-2.0f,0.0f},
+ {2.0f,4.0f,0.0f,-5.0f,0.0f},
+};
 
 
 void CField::Init()
@@ -64,64 +79,68 @@ void CField::Init()
 void CField::Init(const char * TexName)
 {
 	// 頂点バッファとIndexバッファの設定
-	m_xCnt = FIELD_X;		//横の分割数
-	m_zCnt = FIELD_Z;		//縦の分割数
-	vertexCnt = (FIELD_X + 1) * (FIELD_Z + 1);	//頂点の数
-	returnCnt = FIELD_Z - 1;					//折り返しの回数
+	int vertexCnt = 0;
+	int indexCnt = 0;
+	int u = 0;
+	int v = 1;
+
+	g_gridsize_x = 5;
+	g_gridsize_z = 5;
+	g_gridnumber_x = 5;
+	g_gridnumber_z = 5;
+
+	g_indexnumber = (2 + (g_gridnumber_x * 2 * g_gridnumber_z) + (g_gridnumber_z - 1) * 4);
+	g_vertexnumber = (g_gridnumber_x + 1) * (g_gridnumber_z + 1);
 
 	// テクスチャよみこみ
 	m_Texture = new CTexture();
 	m_Texture->Load(TexName);
 
-	/* 頂点ばっふぁ～生成 */
-	VERTEX_3D* pVertex;
-	pVertex = new VERTEX_3D[vertexCnt];
-	for (int j = 0; j <= FIELD_Z; j++) {
-		for (int i = 0; i <= FIELD_X; i++) {
-			pVertex[i + (FIELD_X + 1) * j].Position = XMFLOAT3(-(FIELD_X * FIELD_SIZE) / 2 + FIELD_SIZE * i, 0.0f, -(FIELD_Z * FIELD_SIZE) / 2 + FIELD_SIZE * j);
-			pVertex[i + (FIELD_X + 1) * j].TexCoord = XMFLOAT2(pVertex[i + (FIELD_X + 1) * j].Position.x / m_xCnt, pVertex[i + (FIELD_X + 1) * j].Position.z / m_zCnt);
+	/* 頂点ばっふぁ～設定 */
+	VERTEX_3D* pVertex = new VERTEX_3D[g_vertexnumber];
+	unsigned short* index = new unsigned short [g_indexnumber];
+
+	for (int cntZ = 0; cntZ < g_gridnumber_z + 1; cntZ++)
+	{
+		for (int cntX = 0; cntX < g_gridnumber_x + 1; cntX++)
+		{
+			vertexCnt = cntX + cntZ * (g_gridnumber_x + 1);
+			pVertex[vertexCnt].Position	= XMFLOAT3((cntX * g_gridsize_x) - (g_gridsize_x * g_gridnumber_x / 2), g_FieldHeight[cntX][cntZ], (cntZ * g_gridsize_z) - (g_gridsize_z * g_gridnumber_z / 2));
+			pVertex[vertexCnt].Normal		= XMFLOAT3(0.0f, 1.0f, 0.0f);		// 法線ベクトルの方向を決める
+			pVertex[vertexCnt].Diffuse		= XMFLOAT4(1, 1, 1, 1);		// RGBA
+			pVertex[vertexCnt].TexCoord	= XMFLOAT2(cntX, cntZ);
 		}
 	}
-	for (int i = 0; i < vertexCnt; i++) {
-		pVertex[i].Diffuse = XMFLOAT4(128, 128, 255, 150);
-		pVertex[i].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+
+	for (int cntz = 0; cntz < g_gridnumber_z; cntz++)
+	{
+		for (int cntx = 0; cntx <= g_gridnumber_x; cntx++)
+		{
+			index[indexCnt++] = cntx + cntz + (g_gridnumber_x * cntz);
+			index[indexCnt++] = cntx + cntz + (g_gridnumber_x * (cntz + 1)) + 1;
+		}
+
+		if (g_indexnumber != indexCnt)
+		{
+			index[indexCnt++] = (g_gridnumber_x * (2 + cntz) + 1 + cntz);
+			index[indexCnt++] = (g_gridnumber_x * (1 + cntz) + 1 + cntz);
+		}
 	}
 
-	// ばっふぁにもってく
 	// 頂点バッファの生成
 	{
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory(&bd, sizeof(bd));
 		bd.Usage = D3D11_USAGE_DEFAULT;
-		bd.ByteWidth = sizeof(VERTEX_3D) * (FIELD_X + 1) * (FIELD_Z + 1);
-		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// 頂点バッファ
+		bd.ByteWidth = sizeof(VERTEX_3D) * g_vertexnumber;
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		bd.CPUAccessFlags = 0;
 
 		D3D11_SUBRESOURCE_DATA sd;
 		ZeroMemory(&sd, sizeof(sd));
 		sd.pSysMem = pVertex;
+
 		CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_pVertexBuffer);
-	}
-
-
-	WORD* pIndex = new WORD[((FIELD_X + 1) * 2 + 2) * FIELD_Z - 2];
-	int w = FIELD_X + 1;
-	for (int j = 0; j < FIELD_Z; j++)
-	{
-		if (j != 0)
-		{
-			//w * j * 2 = 前回までの折り返しを除くインデックス数
-			//(j - 1) * 2　= 前回までの折り返し分のインデックス数
-			pIndex[(w * j * 2) + ((j - 1) * 2)] = (j + 1) * w - 1;	//右辺　ｊ * w = ここまでの頂点データ
-			pIndex[(w * j * 2) + ((j - 1) * 2) + 1] = j * w;
-		}
-
-		for (int i = 0; i < w; i++)
-		{
-			pIndex[(w * j * 2) + (i * 2) + (j * 2)] = (j * w) + i;	//w * j * 2 = 前回までの折り返しを除くインデックス数
-			//j * 2　＝　前回までの折り返し分のインデックス数
-			pIndex[(w * j * 2) + (i * 2 + 1) + (j * 2)] = (j * w) + i + w;
-		}
 	}
 
 	// Indexバッファの生成
@@ -129,19 +148,19 @@ void CField::Init(const char * TexName)
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory(&bd, sizeof(bd));
 		bd.Usage = D3D11_USAGE_DEFAULT;
-		bd.ByteWidth = sizeof(WORD) * ((FIELD_X + 1) * 2 + 2) * FIELD_Z - 2;
+		bd.ByteWidth = sizeof(unsigned short) * g_indexnumber;
 		bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		bd.CPUAccessFlags = 0;
 
 		D3D11_SUBRESOURCE_DATA sd;
 		ZeroMemory(&sd, sizeof(sd));
-		sd.pSysMem = pIndex;
+		sd.pSysMem = index;
 
-		if (FAILED(CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_pIndexBuffer)))
-			return;
+		CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_pIndexBuffer);
 	}
 
-	delete[]pIndex;
+	delete[] index;
+	delete[] pVertex;
 	/* 頂点ばっふぁ～生成おわり */
 
 }
@@ -218,36 +237,18 @@ void CField::Draw()
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
 	CRenderer::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);		// 頂点バッファ設定
-	CRenderer::GetDeviceContext()->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
-	CRenderer::SetTexture(m_Texture);
-
-	// SetWorldViewProjection2Dの代わり
-	//XMMATRIX world;
-	//world = XMMatrixScaling(1.0f, 1.0f, 1.0f);					// 拡大縮小
-	//world *= XMMatrixRotationRollPitchYaw(0.0f, g_Rotation, 0.0f);	// 回転(ラジアン角度)
-	//world *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);				// 移動
-	//CRenderer::SetWorldMatrix(&world);							
-
-	CRenderer::GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);	// トポロジー(どうやって配置するか)設定
-	CRenderer::GetDeviceContext()->DrawIndexed(((FIELD_X + 1) * 2 + 2) * FIELD_Z - 2, 0, 0);
-}
-
-void CField::Draw(const float ScaleX, const float ScaleY, const float ScaleZ, const float RotX, const float RotY, const float RotZ, const float MoveX, const float MoveY, const float MoveZ)
-{
-	UINT stride = sizeof(VERTEX_3D);
-	UINT offset = 0;
-	CRenderer::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);		// 頂点バッファ設定
+	CRenderer::GetDeviceContext()->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R16_UINT, offset);
 	CRenderer::SetTexture(m_Texture);
 
 	// SetWorldViewProjection2Dの代わり
 	XMMATRIX world;
-	world = XMMatrixScaling(1.0f * ScaleX, 1.0f * ScaleY, 1.0f * ScaleZ);					// 拡大縮小
-	world *= XMMatrixRotationRollPitchYaw(RotX, RotY + g_Rotation, RotZ);	// 回転(ラジアン角度)
-	world *= XMMatrixTranslation(MoveX, MoveY, MoveZ);				// 移動
-	CRenderer::SetWorldMatrix(&world);
+	world = XMMatrixScaling(1.0f, 1.0f, 1.0f);					// 拡大縮小
+	world *= XMMatrixRotationRollPitchYaw(0.0f, g_Rotation, 0.0f);	// 回転(ラジアン角度)
+	world *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);				// 移動
+	CRenderer::SetWorldMatrix(&world);							
 
 	CRenderer::GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);	// トポロジー(どうやって配置するか)設定
-	CRenderer::GetDeviceContext()->Draw(4, 0);
+	CRenderer::GetDeviceContext()->DrawIndexed(g_indexnumber, 0, 0);
 }
 
 void Vertex_Index_Config()
@@ -334,75 +335,135 @@ void Vertex_Index_Config()
 	/* 頂点ばっふぁ～生成おわり */
 
 }
-void Vertex_Index_Config(float size, int field_x, int field_z)
+//void Vertex_Index_Config(float size, int field_x, int field_z)
+//{
+//	CField* pField;
+//	pField = new CField();
+//
+//	pField->m_xCnt = FIELD_X;		//横の分割数
+//	pField->m_zCnt = FIELD_Z;		//縦の分割数
+//	pField->vertexCnt = (FIELD_X + 1) * (FIELD_Z + 1);	//頂点の数
+//	pField->returnCnt = FIELD_Z - 1;					//折り返しの回数
+//
+//
+//	// インデックスの
+//	WORD IndexList[]{
+//		0, 1, 2,
+//		2, 3, 1,
+//	};
+//
+//	g_Rotation = 0.0f;
+//	g_Scale = 1.0;
+//
+//	/* 頂点ばっふぁ～生成 */
+//	VERTEX_3D* pVertex;
+//	pVertex = new VERTEX_3D[pField->vertexCnt];
+//
+//	for (int j = 0; j <= FIELD_Z; j++) {
+//		for (int i = 0; i <= FIELD_X; i++) {
+//			pVertex[i + (FIELD_X + 1) * j].Position = XMFLOAT3(-(FIELD_X * FIELD_SIZE) / 2 + FIELD_SIZE * i, 0.0f, -(FIELD_Z * FIELD_SIZE) / 2 + FIELD_SIZE * j);
+//		}
+//	}
+//
+//	for (int i = 0; i < pField->vertexCnt; i++) {
+//		pVertex[i].Diffuse = XMFLOAT4(128, 128, 255, 255);
+//		pVertex[i].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+//	}
+//
+//	// ばっふぁにもってく
+//	// 頂点バッファの生成
+//	{
+//		D3D11_BUFFER_DESC bd;
+//		ZeroMemory(&bd, sizeof(bd));
+//		bd.Usage = D3D11_USAGE_DEFAULT;
+//		bd.ByteWidth = sizeof(VERTEX_3D) * pField->vertexCnt;
+//		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// 頂点バッファ
+//		bd.CPUAccessFlags = 0;
+//
+//		D3D11_SUBRESOURCE_DATA sd;
+//		ZeroMemory(&sd, sizeof(sd));
+//		sd.pSysMem = pVertex;
+//		CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &pField->m_pVertexBuffer);
+//	}
+//
+//
+//	WORD* pIndex = new WORD[((FIELD_X + 1) * 2 + 2) * FIELD_Z - 2];
+//	int w = FIELD_X + 1;
+//	for (int j = 0; j < FIELD_Z; j++)
+//	{
+//		if (j != 0)
+//		{
+//			//w * j * 2 = 前回までの折り返しを除くインデックス数
+//			//(j - 1) * 2　= 前回までの折り返し分のインデックス数
+//			pIndex[(w * j * 2) + ((j - 1) * 2)] = (j + 1) * w - 1;	//右辺　ｊ * w = ここまでの頂点データ
+//			pIndex[(w * j * 2) + ((j - 1) * 2) + 1] = j * w;
+//		}
+//
+//		for (int i = 0; i < w; i++)
+//		{
+//			pIndex[(w * j * 2) + (i * 2) + (j * 2)] = (j * w) + i;	//w * j * 2 = 前回までの折り返しを除くインデックス数
+//			//j * 2　＝　前回までの折り返し分のインデックス数
+//			pIndex[(w * j * 2) + (i * 2 + 1) + (j * 2)] = (j * w) + i + w;
+//		}
+//	}
+//
+//	// Indexバッファの生成
+//	{
+//		D3D11_BUFFER_DESC bd;
+//		ZeroMemory(&bd, sizeof(bd));
+//		bd.Usage = D3D11_USAGE_DEFAULT;
+//		bd.ByteWidth = sizeof(WORD) * ((FIELD_X + 1) * 2 + 2) * FIELD_Z - 2;
+//		bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+//		bd.CPUAccessFlags = 0;
+//
+//		D3D11_SUBRESOURCE_DATA sd;
+//		ZeroMemory(&sd, sizeof(sd));
+//		sd.pSysMem = IndexList;
+//
+//		if (FAILED(CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &pField->m_pIndexBuffer)))
+//			return;
+//	}
+//
+//	delete[]pIndex;
+//	/* 頂点ばっふぁ～生成おわり */
+//
+//}
+
+void CField::MuraseField()
 {
-	CField* pField;
-	pField = new CField();
-
-	pField->m_xCnt = FIELD_X;		//横の分割数
-	pField->m_zCnt = FIELD_Z;		//縦の分割数
-	pField->vertexCnt = (FIELD_X + 1) * (FIELD_Z + 1);	//頂点の数
-	pField->returnCnt = FIELD_Z - 1;					//折り返しの回数
-
-
-	// インデックスの
-	WORD IndexList[]{
-		0, 1, 2,
-		2, 3, 1,
-	};
-
-	g_Rotation = 0.0f;
-	g_Scale = 1.0;
-
-	/* 頂点ばっふぁ～生成 */
-	VERTEX_3D* pVertex;
-	pVertex = new VERTEX_3D[pField->vertexCnt];
-
-	for (int j = 0; j <= FIELD_Z; j++) {
-		for (int i = 0; i <= FIELD_X; i++) {
-			pVertex[i + (FIELD_X + 1) * j].Position = XMFLOAT3(-(FIELD_X * FIELD_SIZE) / 2 + FIELD_SIZE * i, 0.0f, -(FIELD_Z * FIELD_SIZE) / 2 + FIELD_SIZE * j);
+	float offset = 1.0f;
+	for (int z = 0; z < 5; z++)
+	{
+		for (int x = 0; x < 5; x++)
+		{
+			m_Vertex[z * 5 + z].Position.x = x * 2.0f + offset;
+			m_Vertex[z * 5 + z].Position.z = -z * 2.0f + offset;
+			m_Vertex[z * 5 + z].Position.y = g_FieldHeight[z][x];
 		}
 	}
 
-	for (int i = 0; i < pField->vertexCnt; i++) {
-		pVertex[i].Diffuse = XMFLOAT4(128, 128, 255, 255);
-		pVertex[i].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	}
-
-	// ばっふぁにもってく
 	// 頂点バッファの生成
 	{
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory(&bd, sizeof(bd));
 		bd.Usage = D3D11_USAGE_DEFAULT;
-		bd.ByteWidth = sizeof(VERTEX_3D) * pField->vertexCnt;
+		bd.ByteWidth = sizeof(VERTEX_3D) * (FIELD_X + 1) * (FIELD_Z + 1);
 		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// 頂点バッファ
 		bd.CPUAccessFlags = 0;
 
 		D3D11_SUBRESOURCE_DATA sd;
 		ZeroMemory(&sd, sizeof(sd));
-		sd.pSysMem = pVertex;
-		CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &pField->m_pVertexBuffer);
+		sd.pSysMem = m_Vertex;
+		CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_pVertexBuffer);
 	}
 
 
-	WORD* pIndex = new WORD[((FIELD_X + 1) * 2 + 2) * FIELD_Z - 2];
-	int w = FIELD_X + 1;
-	for (int j = 0; j < FIELD_Z; j++)
+	unsigned short index[25];
+	for (int z = 0; z < 5; z++)
 	{
-		if (j != 0)
+		for (int x = 0; x < 5; x++)
 		{
-			//w * j * 2 = 前回までの折り返しを除くインデックス数
-			//(j - 1) * 2　= 前回までの折り返し分のインデックス数
-			pIndex[(w * j * 2) + ((j - 1) * 2)] = (j + 1) * w - 1;	//右辺　ｊ * w = ここまでの頂点データ
-			pIndex[(w * j * 2) + ((j - 1) * 2) + 1] = j * w;
-		}
-
-		for (int i = 0; i < w; i++)
-		{
-			pIndex[(w * j * 2) + (i * 2) + (j * 2)] = (j * w) + i;	//w * j * 2 = 前回までの折り返しを除くインデックス数
-			//j * 2　＝　前回までの折り返し分のインデックス数
-			pIndex[(w * j * 2) + (i * 2 + 1) + (j * 2)] = (j * w) + i + w;
+			//index[x + z] = m_Vertex->Position[x + z];
 		}
 	}
 
@@ -417,13 +478,38 @@ void Vertex_Index_Config(float size, int field_x, int field_z)
 
 		D3D11_SUBRESOURCE_DATA sd;
 		ZeroMemory(&sd, sizeof(sd));
-		sd.pSysMem = IndexList;
+		sd.pSysMem = index;
 
-		if (FAILED(CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &pField->m_pIndexBuffer)))
+		if (FAILED(CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_pIndexBuffer)))
 			return;
 	}
 
-	delete[]pIndex;
+	delete[] index;
 	/* 頂点ばっふぁ～生成おわり */
+}
 
+
+void CField::MuraseFieldDraw()
+{
+	UINT stride = sizeof(VERTEX_3D);
+	UINT offset = 0;
+	CRenderer::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);		// 頂点バッファ設定
+	CRenderer::GetDeviceContext()->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);			// indexバッファ設定
+	CRenderer::SetTexture(m_Texture);																	// テクスチャ設定
+
+	// SetWorldViewProjection2Dの代わり
+	XMMATRIX world;													// マトリクス設定
+	world = XMMatrixScaling(1.0f, 1.0f, 1.0f);						// 拡大縮小
+	world *= XMMatrixRotationRollPitchYaw(0.0f, g_Rotation, 0.0f);	// 回転(ラジアン角度)
+	world *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);					// 移動
+	CRenderer::SetWorldMatrix(&world);
+
+	CRenderer::GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);	// トポロジー(どうやって配置するか)設定
+	CRenderer::GetDeviceContext()->DrawIndexed(((FIELD_X + 1) * 2 + 2) * FIELD_Z - 2, 0, 0);
+
+}
+
+void OkazakiField()
+{
+	
 }

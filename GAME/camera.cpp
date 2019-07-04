@@ -19,7 +19,6 @@ void CCamera::Init()
 	m_Viewport.right = SCREEN_WIDTH;
 	m_Viewport.bottom = SCREEN_HEIGHT;
 
-	m_Target = XMFLOAT3(0.0f, 1.0f, -5.0f);
 }
 
 
@@ -36,13 +35,13 @@ void CCamera::Update()
 	if (CInput::GetKeyPress('A')) {		// 左
 		m_Position.x -= 0.5f;
 	}
-	else if (CInput::GetKeyPress('D')) {		// 右
+	if (CInput::GetKeyPress('D')) {		// 右
 		m_Position.x += 0.5f;
 	}
-	else if (CInput::GetKeyPress('W')) {		// 前方
+	if (CInput::GetKeyPress('W')) {		// 前方
 		m_Position.z += 0.5f;
 	}
-	else if (CInput::GetKeyPress('S')) {		// 後方
+	if (CInput::GetKeyPress('S')) {		// 後方
 		m_Position.z -= 0.5f;
 	}
 

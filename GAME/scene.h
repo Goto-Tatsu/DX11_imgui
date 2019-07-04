@@ -84,7 +84,7 @@ public:
 		for (int i = 0; i < ENEMY_MAX; i++) {
 			AddGameObject<CEnemy>(LAYER_3DMODELS);
 		}
-		AddGameObject<CPolygon>("asset/primals.tga", LAYER_2DPOLYGONS);
+		AddGameObject<CPolygon>("asset/number.tga", LAYER_2DPOLYGONS);
 
 	}
 

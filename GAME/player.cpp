@@ -54,6 +54,16 @@ void CPlayer::Update()
 	if (CInput::GetKeyPress('S')) {		// Œã•û
 		m_Position.z -= 0.5f;
 	}
+
+	// ù‰ñ
+	if (CInput::GetKeyPress(VK_RIGHT)) {
+		m_Rotation.y += 0.01f;
+		//m_fCameraAngle += 0.01f;
+	}
+	else if (CInput::GetKeyPress(VK_LEFT)) {
+		m_Rotation.y -= 0.01f;
+		//m_fCameraAngle -= 0.01f;
+	}
 }
 
 void CPlayer::Draw()
