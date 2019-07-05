@@ -32,50 +32,6 @@ static float g_FieldHeight[5][5] =
 };
 
 
-void CField::Init()
-{
-	/* 頂点ばっふぁ～生成 */
-	VERTEX_3D vertex[4];
-	vertex[0].Position = XMFLOAT3(300.0f, 300.0f, 10.0f);
-	vertex[0].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	vertex[0].Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	vertex[0].TexCoord = XMFLOAT2(0.0f, 0.0f);
-
-	vertex[1].Position = XMFLOAT3(300.0f, 300.0f, 10.0f);
-	vertex[1].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	vertex[1].Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	vertex[1].TexCoord = XMFLOAT2(1.0f, 0.0f);
-
-	vertex[2].Position = XMFLOAT3(300.0f, 300.0f, 2.0f);
-	vertex[2].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	vertex[2].Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	vertex[2].TexCoord = XMFLOAT2(0.0f, 1.0f);
-
-	vertex[3].Position = XMFLOAT3(300.0f, 300.0f, 2.0f);
-	vertex[3].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	vertex[3].Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	vertex[3].TexCoord = XMFLOAT2(1.0f, 1.0f);
-
-	// ばっふぁにもってく
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory(&bd, sizeof(bd));
-	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(VERTEX_3D) * 4;
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// 頂点バッファ
-	bd.CPUAccessFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA sd;
-	ZeroMemory(&sd, sizeof(sd));
-	sd.pSysMem = vertex;
-	CRenderer::GetDevice()->CreateBuffer(&bd, &sd, &m_pVertexBuffer);
-	/* 頂点ばっふぁ～生成おわり */
-
-	// テクスチャよみこみ
-	m_Texture = new CTexture();
-	m_Texture->Load("asset/number.tga");
-
-}
-
 void CField::Init(const char * TexName)
 {
 	// 頂点バッファとIndexバッファの設定
@@ -100,6 +56,7 @@ void CField::Init(const char * TexName)
 	VERTEX_3D* pVertex = new VERTEX_3D[g_vertexnumber];
 	unsigned short* index = new unsigned short [g_indexnumber];
 
+	// 頂点座標設定
 	for (int cntZ = 0; cntZ < g_gridnumber_z + 1; cntZ++)
 	{
 		for (int cntX = 0; cntX < g_gridnumber_x + 1; cntX++)
@@ -112,6 +69,28 @@ void CField::Init(const char * TexName)
 		}
 	}
 
+	// 法線ベクトルのせってい
+	XMFLOAT3 va, vb, n;
+
+	for (int cntZ = 1; cntZ < 4; cntZ++)
+	{
+		for (int cntX = 1; cntX < 4; cntX++)
+		{
+			va.x = m_Vertex[(cntZ - 1) * 5 + cntX].Position.x - m_Vertex[(cntZ + 1) * 5 + cntX].Position.x;
+			va.y = m_Vertex[(cntZ - 1) * 5 + cntX].Position.y - m_Vertex[(cntZ + 1) * 5 + cntX].Position.y;
+			va.z = m_Vertex[(cntZ - 1) * 5 + cntX].Position.z - m_Vertex[(cntZ + 1) * 5 + cntX].Position.z;
+
+			vb.x = m_Vertex[(cntX + 1) * 5 + cntZ].Position.x - m_Vertex[(cntX - 1) * 5 + cntZ].Position.x;
+			vb.y = m_Vertex[(cntX + 1) * 5 + cntZ].Position.y - m_Vertex[(cntX - 1) * 5 + cntZ].Position.y;
+			vb.z = m_Vertex[(cntX + 1) * 5 + cntZ].Position.z - m_Vertex[(cntX - 1) * 5 + cntZ].Position.z;
+
+			n.x = va.y * va.z - va.z * vb.y;
+			n.y = va.z * va.x - va.x * vb.z;
+			n.z = va.x * va.y - va.y * vb.x;
+		}
+	}
+
+	// 頂点Index設定
 	for (int cntz = 0; cntz < g_gridnumber_z; cntz++)
 	{
 		for (int cntx = 0; cntx <= g_gridnumber_x; cntx++)

@@ -79,7 +79,7 @@ public:
 	virtual void Init() {
 		// ÉåÉCÉÑÅ[ä«óù
 		AddGameObject<CCamera>(LAYER_CAMERA);
-		AddGameObject<CField>("asset/field004.tga", LAYER_3DMODELS);
+		AddGameObject<CField>("asset/primals.tga", LAYER_3DMODELS);
 		AddGameObject<CPlayer>(LAYER_3DMODELS);
 		for (int i = 0; i < ENEMY_MAX; i++) {
 			AddGameObject<CEnemy>(LAYER_3DMODELS);
